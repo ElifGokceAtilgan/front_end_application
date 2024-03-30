@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Uygulaması</title>
+  <style>
+    .quiz-container {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .question {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .options {
+      display: flex;
+      justify-content: center;
+    }
+    .option {
+      margin: 0 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .option:hover {
+      background-color: #e0e0e0;
+    }
+    #result-table {
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    #result-table th, #result-table td {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+    }
+    #result-table th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <h2>Quiz Uygulaması</h2>
+    <div class="question"></div>
+    <div class="options"></div>
+    <table id="result-table"></table>
+  </div>
+
+  <script>
+    fetch('https://jsonplaceholder.typicode.com/posts')
+      .then(response => response.json())
+      .then(posts => {
+        const questions = posts.slice(0, 10).map(post => {
+          return {
+            question: post.title,
+            options: ['A)sunt', 'B)qui', 'C)dolorem', 'D)quia'],
+            answer: 'A' 
+          };
+        });
+
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+
+        function displayQuestion() {
+          const currentQuestion = questions[currentQuestionIndex];
+          const questionElement = document.querySelector('.question');
+          const optionsContainer = document.querySelector('.options');
+
+          questionElement.textContent = currentQuestion.question;
+          optionsContainer.innerHTML = '';
+
+          currentQuestion.options.forEach((option, index) => {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'option';
+            optionElement.textContent = option;
+
+            optionElement.addEventListener('click', () => {
+              if (userAnswers.length <= currentQuestionIndex) {
+                userAnswers.push(option.charAt(0));
+              }
+              goToNextQuestion();
+            });
+
+            optionsContainer.appendChild(optionElement);
+          });
+
+          // Süreyi başlat
+          startTimer();
+        }
+
+        function startTimer() {
+          let secondsLeft = 30;
+          let first10Seconds = true;
+          const timerInterval = setInterval(() => {
+            if (secondsLeft <= 0) {
+              clearInterval(timerInterval);
+              goToNextQuestion();
+            } else {
+              if (secondsLeft <= 20 && first10Seconds) {
+                disableOptions();
+                first10Seconds = false;
+              } else if (secondsLeft <= 20 && !first10Seconds) {
+                enableOptions();
+              }
+              secondsLeft--;
+            }
+          }, 1000);
+        }
+
+        function enableOptions() {
+          const optionElements = document.querySelectorAll('.option');
+          optionElements.forEach(option => option.style.pointerEvents = 'auto');
+        }
+
+        function disableOptions() {
+          const optionElements = document.querySelectorAll('.option');
+          optionElements.forEach(option => option.style.pointerEvents = 'none');
+        }
+
+        function goToNextQuestion() {
+          currentQuestionIndex++;
+          if (currentQuestionIndex < questions.length) {
+            displayQuestion();
+          } else {
+            displayResult();
+          }
+        }
+
+        function displayResult() {
+          const resultTable = document.getElementById('result-table');
+          resultTable.innerHTML = `
+            <tr>
+              <th>Soru</th>
+              <th>Cevap</th>
+            </tr>
+          `;
+          
+          questions.forEach((question, index) => {
+            const row = document.createElement('tr');
+            const questionCell = document.createElement('td');
+            const answerCell = document.createElement('td');
+
+            questionCell.textContent = question.question;
+            answerCell.textContent = question.answer === userAnswers[index] ? 'Doğru' : 'Yanlış';
+
+            row.appendChild(questionCell);
+            row.appendChild(answerCell);
+            resultTable.appendChild(row);
+          });
+        }
+
+        displayQuestion();
+      });
+  </script>
+</body>
+</html>
